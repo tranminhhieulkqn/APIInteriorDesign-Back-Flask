@@ -4,7 +4,6 @@
 import os
 from flask import Flask
 from flask.helpers import send_from_directory
-import tensorflow as tf
 
 app = Flask(__name__)
 
@@ -15,10 +14,10 @@ def favicon():
 
 @app.route("/")
 def home():
-    x = tf.lite.Interpreter()
     return "Hello, Flask!"
 
 if __name__ == '__main__':
     ## run with 
+    # tf.lite.TFLiteConverter()
     app.run()
     # app.run(debug=True, port=5000)
