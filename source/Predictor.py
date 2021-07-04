@@ -13,6 +13,8 @@ class Predictor:
     __instance = None
     __models = dict({})
     __models_dir = ''
+    __target_size = 224
+    __shift_pixel = 50
 
     def __init__(self, models_dir='models/'):
         Predictor.__models_dir = models_dir
@@ -31,23 +33,23 @@ class Predictor:
         return Predictor.__instance
 
     @classmethod
-    def __load_models(cls):
+    def __load_models(self):
         list_model = [model for model in os.listdir(
-            cls.__models_dir) if ('.tflite' in model)]
+            self.__models_dir) if ('.tflite' in model)]
         for model_name in list_model:
             # get model path
-            model_path = os.path.join(cls.__models_dir, model_name)
+            model_path = os.path.join(self.__models_dir, model_name)
             # loading and active model
             model = tf.lite.Interpreter(model_path=model_path)
             model.allocate_tensors()
             # get name model
             name = str(model_name.split('.tflite')[0])
             # append to array models
-            cls.__models[name] = model
+            self.__models[name] = model
         print('Load model successfully!')
 
     @classmethod
-    def customize_size(original_size, target_size):
+    def customize_size(self, original_size, target_size):
         # default ratio = 1
         ratio = 1
         # get size width, height of image
@@ -59,18 +61,19 @@ class Predictor:
         return int(width / ratio), int(height / ratio)
 
     @classmethod
-    def soft_voting(results):
+    def soft_voting(self, results):
         sum_prob = np.zeros(5)
         for result in results:
             sum_prob = sum_prob + result
-        return (sum_prob)/len(result)
-        
+        return (sum_prob)/len(results)
+
     @classmethod
-    def demo_crop(cls, image_path, target_size=224, shift_pixel=50):  # jumps is the number of pixels
+    # jumps is the number of pixels
+    def demo_crop(self, image_path, target_size=224, shift_pixel=50):
         image = io.imread(image_path)
         img = Image.fromarray(image.astype('uint8'), 'RGB')
         img = img.convert('RGB')
-        img = img.resize(cls.customize_size(img.size, target_size))
+        img = img.resize(self.customize_size(img.size, target_size))
         x_max, y_max = np.array(img.size) - target_size
         images = []
         for random_x in range(0, x_max + 1, shift_pixel):
@@ -87,7 +90,7 @@ class Predictor:
         return images
 
     @classmethod
-    def predict(model, image):
+    def predict(self, model, image):
         input_details = model.get_input_details()
         output_details = model.get_output_details()
         model.set_tensor(input_details[0]['index'], image)
@@ -95,17 +98,18 @@ class Predictor:
         output = model.get_tensor(output_details[0]['index'])
         # classes = np.argmax(output, axis = 1)
         return output[0]
-    
-    # @classmethod
-    # def predict_with_image_croped(model, list_image):
-    #     results = []
-    #     for image in list_image:
-    #         results.append(predict(model,image))
-    #     return soft_voting(results)
 
-    # @classmethod
-    # def predict_with_all_model(model_dictionary,list_image):
-    #     results =[]
-    #     for model in model_dict.values():
-    #         results.append(predict_with_image_croped(model,list_image))
-    #     return soft_voting(results)
+    @classmethod
+    def predict_with_image_croped(self, model, list_image):
+        results = []
+        for image in list_image:
+            results.append(self.predict(model, image))
+        return self.soft_voting(results)
+
+    @staticmethod
+    def predict_with_all_model(image_path):
+        results = []
+        for model in Predictor.__models.values():
+            results.append(Predictor.predict_with_image_croped(
+                model, Predictor.demo_crop(image_path=image_path)))
+        return Predictor.soft_voting(results)
