@@ -1,4 +1,5 @@
 import os
+import time
 import numpy as np
 import tensorflow as tf
 
@@ -34,8 +35,11 @@ class Predictor:
 
     @classmethod
     def __load_models(self):
+        time_start = time.time()
+
         list_model = [model for model in os.listdir(
             self.__models_dir) if ('.tflite' in model)]
+
         for model_name in list_model:
             # get model path
             model_path = os.path.join(self.__models_dir, model_name)
@@ -46,7 +50,9 @@ class Predictor:
             name = str(model_name.split('.tflite')[0])
             # append to array models
             self.__models[name] = model
-        print('Load model successfully!')
+        time_end = time.time() - time_start
+
+        print('Load model successfully! Load in: {}'.format(round(time_end, 3)))
 
     @classmethod
     def customize_size(self, original_size, target_size):

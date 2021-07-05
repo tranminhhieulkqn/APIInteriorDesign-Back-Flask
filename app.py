@@ -66,7 +66,6 @@ def predict():
 
 if __name__ == '__main__':
     # run with environment production (deploy)
-    # app.run()
+    app.run()
     # run with environment development (debug)
-
-    app.run(debug=True, port=5000)
+    # app.run(debug=True, port=5000)
