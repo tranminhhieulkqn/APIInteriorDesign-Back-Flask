@@ -1,6 +1,7 @@
 # My custom
 
 models_/
+models/Xception.tflite
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
