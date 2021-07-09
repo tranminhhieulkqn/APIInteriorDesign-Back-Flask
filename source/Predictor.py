@@ -56,7 +56,7 @@ class Predictor:
         print('Load model successfully! Load in: {}'.format(round(time_end, 3)))
 
     @classmethod
-    def get_image_from_url(self, image_url):
+    def __get_image_from_url(self, image_url):
         """ Get image from URL """
         # use library skimage to get image
         image = io.imread(image_url)
@@ -65,7 +65,7 @@ class Predictor:
         return image
 
     @classmethod
-    def customize_size(self, original_size, target_size):
+    def __customize_size(self, original_size, target_size):
         """"""
         # default ratio = 1
         ratio = 1
@@ -78,7 +78,7 @@ class Predictor:
         return int(width / ratio), int(height / ratio)
 
     @classmethod
-    def get_step_from_size(self, size):  # size >= target_size
+    def __get_step_from_size(self, size):  # size >= target_size
         """ From the target size and size calculate the number of crops """
         # get variable
         target_size = self.__target_size
@@ -91,7 +91,7 @@ class Predictor:
         return int(whole)
 
     @classmethod
-    def crop_image(self, image, area):
+    def __crop_image(self, image, area):
         """ Crop image with  """
         # get variable
         target_size = self.__target_size
@@ -101,13 +101,13 @@ class Predictor:
         return ImageOps.fit(c_img, (target_size, target_size), Image.ANTIALIAS)
 
     @classmethod
-    def soft_voting(self, output):
+    def __soft_voting(self, output):
         """ Use soft voting for results """
         # return results of soft voting
         return np.sum(output, axis=0) / len(output)
 
     @classmethod
-    def data_processing(self, image):
+    def __data_processing(self, image):
         """  """
         # get variable
         target_size = self.__target_size
@@ -116,14 +116,14 @@ class Predictor:
         images = np.empty((0, target_size, target_size, 3), dtype='float32')
 
         # get size to resize
-        w, h = self.customize_size(image.size, target_size)
+        w, h = self.__customize_size(image.size, target_size)
 
         # resize image
         image = image.resize((w, h))
 
         # get the number of images that can be taken in rows and columns
-        noCol = self.get_step_from_size(w)
-        noRow = self.get_step_from_size(h)
+        noCol = self.__get_step_from_size(w)
+        noRow = self.__get_step_from_size(h)
 
         if noCol == 1 and noRow == 1:  # if can get only 1 image, crop the image in the center
 
@@ -133,7 +133,7 @@ class Predictor:
 
             # crop image
             area = (x_, y_, x_ + target_size, y_ + target_size)
-            croped_image = self.crop_image(image, area)
+            croped_image = self.__crop_image(image, area)
             croped_image = np.array(croped_image) / 255
             croped_image = croped_image.reshape(
                 1, target_size, target_size, 3).astype(np.float32)
@@ -155,7 +155,7 @@ class Predictor:
                     # crop image
                     area = (random_x, random_y, random_x +
                             target_size, random_y + target_size)
-                    croped_image = self.crop_image(image, area)
+                    croped_image = self.__crop_image(image, area)
 
                     # normalize and reshape
                     croped_image = np.array(croped_image) / 255
@@ -195,19 +195,19 @@ class Predictor:
         output = model.get_tensor(output_details[0]['index'])
 
         # soft voting output
-        output = self.soft_voting(output)
+        output = self.__soft_voting(output)
 
         # return result
         return output
 
     @staticmethod
     def ensemble_predict(image_url):
-        image = Predictor.get_image_from_url(image_url)
-        images = Predictor.data_processing(image=image)
+        image = Predictor.__get_image_from_url(image_url)
+        images = Predictor.__data_processing(image=image)
         predictions = []
         for model_name in Predictor.__models:
             prediction = Predictor.__predict(
                 Predictor.__models[model_name], images)
             predictions.append(prediction)
-        predictions = Predictor.soft_voting(predictions)
+        predictions = Predictor.__soft_voting(predictions)
         return predictions
