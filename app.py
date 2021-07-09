@@ -38,7 +38,7 @@ def predict():
             
             start = time.time()
             # image = io.imread(url)
-            output = predictor.predict_with_all_model(image_path=url)
+            output = predictor.ensemble_predict(image_url=url)
             end = time.time() - start
             print('time: ', end)
         except():
@@ -50,9 +50,9 @@ def predict():
         return jsonify({
             "success": True,
             "message": "Predicted Results",
-            # "result": (output*100).tolist(),
-            # "label": labels[int(np.argmax(output))],
-            # "score": np.max(output*100).tolist()
+            "result": (output*100).tolist(),
+            "label": labels[int(np.argmax(output))],
+            "score": np.max(output*100).tolist()
         }), 200
     else:
         return jsonify({
@@ -66,6 +66,6 @@ def predict():
 
 if __name__ == '__main__':
     # run with environment production (deploy)
-    app.run()
+    # app.run()
     # run with environment development (debug)
-    # app.run(debug=True, port=5000)
+    app.run(debug=True, port=5000)

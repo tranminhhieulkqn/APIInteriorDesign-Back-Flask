@@ -1,5 +1,6 @@
 import os
 import time
+import math
 import numpy as np
 import tensorflow as tf
 
@@ -15,7 +16,6 @@ class Predictor:
     __models = dict({})
     __models_dir = ''
     __target_size = 224
-    __shift_pixel = 50
 
     def __init__(self, models_dir='models/'):
         Predictor.__models_dir = models_dir
@@ -35,6 +35,7 @@ class Predictor:
 
     @classmethod
     def __load_models(self):
+        """ Load all model """
         time_start = time.time()
 
         list_model = [model for model in os.listdir(
@@ -55,7 +56,17 @@ class Predictor:
         print('Load model successfully! Load in: {}'.format(round(time_end, 3)))
 
     @classmethod
+    def get_image_from_url(self, image_url):
+        """ Get image from URL """
+        # use library skimage to get image
+        image = io.imread(image_url)
+        # get image and convert color system to RBG
+        image = Image.fromarray(image.astype('uint8'), 'RGB')
+        return image
+
+    @classmethod
     def customize_size(self, original_size, target_size):
+        """"""
         # default ratio = 1
         ratio = 1
         # get size width, height of image
@@ -67,55 +78,136 @@ class Predictor:
         return int(width / ratio), int(height / ratio)
 
     @classmethod
-    def soft_voting(self, results):
-        sum_prob = np.zeros(5)
-        for result in results:
-            sum_prob = sum_prob + result
-        return (sum_prob)/len(results)
+    def get_step_from_size(self, size):  # size >= target_size
+        """ From the target size and size calculate the number of crops """
+        # get variable
+        target_size = self.__target_size
+        # get frac and whole
+        frac, whole = math.modf(size / target_size)
+        # if frac > 0.2 => increase whole
+        if frac > 0.2:
+            whole += 1
+        # return result
+        return int(whole)
 
     @classmethod
-    # jumps is the number of pixels
-    def demo_crop(self, image_path, target_size=224, shift_pixel=50):
-        image = io.imread(image_path)
-        img = Image.fromarray(image.astype('uint8'), 'RGB')
-        img = img.convert('RGB')
-        img = img.resize(self.customize_size(img.size, target_size))
-        x_max, y_max = np.array(img.size) - target_size
-        images = []
-        for random_x in range(0, x_max + 1, shift_pixel):
-            for random_y in range(0, y_max + 1, shift_pixel):
-                area = (random_x, random_y, random_x +
-                        target_size, random_y + target_size)
-                c_img = img.crop(area)
-                fit_img_h = ImageOps.fit(
-                    c_img, (target_size, target_size), Image.ANTIALIAS)
-                image = np.array(fit_img_h) / 255
-                image = image.reshape(
-                    1, target_size, target_size, 3).astype(np.float32)
-                images.append(image)
+    def crop_image(self, image, area):
+        """ Crop image with  """
+        # get variable
+        target_size = self.__target_size
+        # crop image with area
+        c_img = image.crop(area)
+        # return with fit image
+        return ImageOps.fit(c_img, (target_size, target_size), Image.ANTIALIAS)
+
+    @classmethod
+    def soft_voting(self, output):
+        """ Use soft voting for results """
+        # return results of soft voting
+        return np.sum(output, axis=0) / len(output)
+
+    @classmethod
+    def data_processing(self, image):
+        """  """
+        # get variable
+        target_size = self.__target_size
+
+        # temporary array of images to return
+        images = np.empty((0, target_size, target_size, 3), dtype='float32')
+
+        # get size to resize
+        w, h = self.customize_size(image.size, target_size)
+
+        # resize image
+        image = image.resize((w, h))
+
+        # get the number of images that can be taken in rows and columns
+        noCol = self.get_step_from_size(w)
+        noRow = self.get_step_from_size(h)
+
+        if noCol == 1 and noRow == 1:  # if can get only 1 image, crop the image in the center
+
+            # get position crop
+            x_ = (w - target_size) // 2
+            y_ = (h - target_size) // 2
+
+            # crop image
+            area = (x_, y_, x_ + target_size, y_ + target_size)
+            croped_image = self.crop_image(image, area)
+            croped_image = np.array(croped_image) / 255
+            croped_image = croped_image.reshape(
+                1, target_size, target_size, 3).astype(np.float32)
+
+            # add to array
+            images = np.append(images, croped_image, axis=0)
+
+        else:  # if can get multi image
+            # get step and position max for crop
+            x_max, y_max = np.array((w, h)) - target_size  # get max position
+
+            # get step
+            stepCol = (x_max // (noCol - 1)) if (noCol > 1) else 1
+            stepRow = (y_max // (noRow - 1)) if (noRow > 1) else 1
+
+            # process each image with the found step
+            for random_x in range(0, x_max + 1, stepCol):
+                for random_y in range(0, y_max + 1, stepRow):
+                    # crop image
+                    area = (random_x, random_y, random_x +
+                            target_size, random_y + target_size)
+                    croped_image = self.crop_image(image, area)
+
+                    # normalize and reshape
+                    croped_image = np.array(croped_image) / 255
+                    croped_image = croped_image.reshape(
+                        -1, target_size, target_size, 3).astype(np.float32)
+
+                    # add to array
+                    images = np.append(images, croped_image, axis=0)
+
+        # return array
         return images
 
     @classmethod
-    def predict(self, model, image):
+    def __predict(self, model, images):
+        # get variable
+        target_size = self.__target_size
+
+        # get number of images
+        noImage = len(images)
+
+        # get input and output of interpreter
         input_details = model.get_input_details()
         output_details = model.get_output_details()
-        model.set_tensor(input_details[0]['index'], image)
-        model.invoke()
-        output = model.get_tensor(output_details[0]['index'])
-        # classes = np.argmax(output, axis = 1)
-        return output[0]
 
-    @classmethod
-    def predict_with_image_croped(self, model, list_image):
-        results = []
-        for image in list_image:
-            results.append(self.predict(model, image))
-        return self.soft_voting(results)
+        # if input and output not map with input image => reshape
+        if noImage != input_details[0]['shape'][0]:
+            model.resize_tensor_input(
+                input_details[0]['index'], (noImage, target_size, target_size, 3))
+            model.resize_tensor_input(output_details[0]['index'], (noImage, 5))
+            model.allocate_tensors()
+
+        # set input images with input layer interpreter
+        model.set_tensor(input_details[0]['index'], images)
+        # invoke
+        model.invoke()
+        # get the result in the output layer
+        output = model.get_tensor(output_details[0]['index'])
+
+        # soft voting output
+        output = self.soft_voting(output)
+
+        # return result
+        return output
 
     @staticmethod
-    def predict_with_all_model(image_path):
-        results = []
-        for model in Predictor.__models.values():
-            results.append(Predictor.predict_with_image_croped(
-                model, Predictor.demo_crop(image_path=image_path)))
-        return Predictor.soft_voting(results)
+    def ensemble_predict(image_url):
+        image = Predictor.get_image_from_url(image_url)
+        images = Predictor.data_processing(image=image)
+        predictions = []
+        for model_name in Predictor.__models:
+            prediction = Predictor.__predict(
+                Predictor.__models[model_name], images)
+            predictions.append(prediction)
+        predictions = Predictor.soft_voting(predictions)
+        return predictions
