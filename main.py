@@ -2,6 +2,7 @@
 # pip3 freeze > requirements.txt
 
 import os
+import gc
 import time
 import numpy as np
 
@@ -37,6 +38,7 @@ def predict():
             start = time.time()
             # image = io.imread(url)
             output = Predictor.getInstance().ensemble_predict(image_url=url)
+            gc.collect()
             end = time.time() - start
             print('time: ', end)
         except():
