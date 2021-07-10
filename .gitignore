@@ -1,7 +1,8 @@
 # My custom
 
 models_/
-models/
+models/Model2.tflite
+models/Model1.tflite
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

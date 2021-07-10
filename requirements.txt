@@ -1,3 +1,4 @@
+--extra-index-url https://google-coral.github.io/py-repo/
 click==8.0.1
 colorama==0.4.4
 Flask==2.0.1
