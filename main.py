@@ -11,9 +11,9 @@ from flask.helpers import send_from_directory
 from source.Predictor import Predictor
 
 app = Flask(__name__)
+predictor = None
 
 labels = ['Art Decor', 'Hi-Tech', 'IndoChinese', 'Industrial', 'Scandinavian']
-
 
 @app.route('/favicon.ico', methods=['GET'])
 def favicon():
