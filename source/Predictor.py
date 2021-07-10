@@ -82,7 +82,7 @@ class Predictor:
         # get frac and whole
         frac, whole = math.modf(size / target_size)
         # if frac > 0.2 => increase whole
-        if frac > 0.2:
+        if frac > 0.5:
             whole += 1
         # return result
         return int(whole)
@@ -178,10 +178,10 @@ class Predictor:
         output_details = model.get_output_details()
 
         # if input and output not map with input image => reshape
-        if noImage != input_details[0]['shape'][0]:
-            model.resize_tensor_input(input_details[0]['index'], (noImage, target_size, target_size, 3))
-            model.resize_tensor_input(output_details[0]['index'], (noImage, 5))
-            model.allocate_tensors()
+        # if noImage != input_details[0]['shape'][0]:
+        #     model.resize_tensor_input(input_details[0]['index'], (noImage, target_size, target_size, 3))
+        #     model.resize_tensor_input(output_details[0]['index'], (noImage, 5))
+        #     model.allocate_tensors()
 
         # set input images with input layer interpreter
         model.set_tensor(input_details[0]['index'], images)

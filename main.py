@@ -37,8 +37,12 @@ def predict():
             
             start = time.time()
             # image = io.imread(url)
-            output = Predictor.getInstance().ensemble_predict(image_url=url)
+            predictor = Predictor.getInstance()
+            output = predictor.ensemble_predict(image_url=url)
+            del predictor
             gc.collect()
+            gc.collect(1)
+            gc.collect(2)
             end = time.time() - start
             print('time: ', end)
         except():
