@@ -11,7 +11,6 @@ from flask.helpers import send_from_directory
 from source.Predictor import Predictor
 
 app = Flask(__name__)
-predictor = Predictor.getInstance()
 
 labels = ['Art Decor', 'Hi-Tech', 'IndoChinese', 'Industrial', 'Scandinavian']
 
@@ -37,7 +36,7 @@ def predict():
             
             start = time.time()
             # image = io.imread(url)
-            output = predictor.ensemble_predict(image_url=url)
+            output = Predictor.getInstance().ensemble_predict(image_url=url)
             end = time.time() - start
             print('time: ', end)
         except():
