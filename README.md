@@ -2,6 +2,7 @@
  
 #pip freeze > requirements.txt
 #pip uninstall -r requirements.txt -y
+#pip3 install --index-url https://google-coral.github.io/py-repo/ tflite_runtime
 
 
 absl-py==0.13.0

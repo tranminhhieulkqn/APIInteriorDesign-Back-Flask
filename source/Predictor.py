@@ -2,13 +2,10 @@ import os
 import time
 import math
 import numpy as np
-import tensorflow as tf
+import imageio as io
+import tflite_runtime.interpreter as tflite
 
-from skimage import io
 from PIL import Image, ImageOps
-
-print(tf.__version__)
-
 
 class Predictor:
 
@@ -45,7 +42,7 @@ class Predictor:
             # get model path
             model_path = os.path.join(self.__models_dir, model_name)
             # loading and active model
-            model = tf.lite.Interpreter(model_path=model_path)
+            model = tflite.Interpreter(model_path=model_path)
             model.allocate_tensors()
             # get name model
             name = str(model_name.split('.tflite')[0])
@@ -182,8 +179,7 @@ class Predictor:
 
         # if input and output not map with input image => reshape
         if noImage != input_details[0]['shape'][0]:
-            model.resize_tensor_input(
-                input_details[0]['index'], (noImage, target_size, target_size, 3))
+            model.resize_tensor_input(input_details[0]['index'], (noImage, target_size, target_size, 3))
             model.resize_tensor_input(output_details[0]['index'], (noImage, 5))
             model.allocate_tensors()
 
