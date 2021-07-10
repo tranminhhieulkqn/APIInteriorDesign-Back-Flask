@@ -11,7 +11,7 @@ from flask.helpers import send_from_directory
 from source.Predictor import Predictor
 
 app = Flask(__name__)
-predictor = None
+predictor = Predictor.getInstance()
 
 labels = ['Art Decor', 'Hi-Tech', 'IndoChinese', 'Industrial', 'Scandinavian']
 
@@ -62,7 +62,6 @@ def predict():
 
 if __name__ == '__main__':
     # run with environment production (deploy)
-    predictor = Predictor.getInstance()
     app.run()
     # run with environment development (debug)
     # app.run(debug=True, port=5000)
