@@ -84,7 +84,7 @@ class Predictor_TFLite:
         # get frac and whole
         frac, whole = math.modf(size / target_size)
         # if frac > 0.2 => increase whole
-        if frac > 0.5:
+        if frac > 0.2:
             whole += 1
         # return result
         return int(whole)
