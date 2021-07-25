@@ -1,6 +1,7 @@
 # My custom
 
-models_/
+models_tflite/
+models_keras/
 # models/Model2.tflite
 # models/Model1.tflite
 

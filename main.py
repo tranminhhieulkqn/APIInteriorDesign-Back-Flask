@@ -9,11 +9,14 @@ import numpy as np
 from flask import Flask, request, jsonify
 from flask.helpers import send_from_directory
 
-from source.Predictor import Predictor
+from source.Predictor_TFLite import Predictor_TFLite
+from source.Predictor_Keras import Predictor_Keras
 
 app = Flask(__name__)
 
-labels = ['Art Decor', 'Hi-Tech', 'IndoChinese', 'Industrial', 'Scandinavian']
+predictor = Predictor_Keras.getInstance()
+# labels = ['Art Decor', 'Hi-Tech', 'IndoChinese', 'Industrial', 'Scandinavian']
+labels = ['ArtDecor', 'HiTech', 'Indochina', 'Industrial', 'Scandinavian']
 
 @app.route('/favicon.ico', methods=['GET'])
 def favicon():
@@ -30,19 +33,9 @@ def predict():
     url = request.json['url']
     if url is not None:
         try:
-            # start = time.time()
-            # urls = demo_crop(url)
-            # end = time.time()- start
-            # print(end)
-            
             start = time.time()
             # image = io.imread(url)
-            predictor = Predictor.getInstance()
             output = predictor.ensemble_predict(image_url=url)
-            del predictor
-            gc.collect()
-            gc.collect(1)
-            gc.collect(2)
             end = time.time() - start
             print('time: ', end)
         except():

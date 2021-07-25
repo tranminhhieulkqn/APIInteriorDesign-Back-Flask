@@ -1,4 +1,7 @@
 # APIInteriorDesign-Back-Flask
+
+--extra-index-url https://google-coral.github.io/py-repo/
+tflite-runtime==2.5.0
  
 #pip install gunicorn
 #pip freeze > requirements.txt
