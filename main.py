@@ -20,6 +20,11 @@ predictor = Predictor_Keras.getInstance()
 # labels = ['Art Decor', 'Hi-Tech', 'IndoChinese', 'Industrial', 'Scandinavian']
 labels = ['ArtDecor', 'HiTech', 'Indochina', 'Industrial', 'Scandinavian']
 
+@app.route('/.well-known/pki-validation/C5448E017D51C1E1669363243CFC8047.txt', methods=['GET', 'OPTIONS'])
+@cross_origin() # allow all origins all methods.
+def ssl():
+    return send_from_directory(os.path.join(app.root_path, 'static'), 'C5448E017D51C1E1669363243CFC8047.txt')
+
 @app.route('/favicon.ico', methods=['GET'])
 @cross_origin() # allow all origins all methods.
 def favicon():
